@@ -5,23 +5,27 @@ networks:
 
 volumes:
     pgmaster:
+{{#slave12}}
     pgslave1:
     pgslave2:
+{{/slave12}}
+{{#slave34}}
     pgslave3:
     pgslave4:
+{{/slave34}}
+{{#backup}}
     backup:
+{{/backup}}
 
 services:
     pgmaster:
-        build:
-            context: ../src
-            dockerfile: Postgres{{#POSTGRES_EXTENDED}}{{FILE_EXTENDED_SUFFIX}}{{/POSTGRES_EXTENDED}}-{{ POSTGRES_VERSION }}-Repmgr-{{ REPMGR_VERSION }}.Dockerfile
+        image: postdock/postgres:1.11-postgres{{ POSTGRES_VERSION }}-repmgr{{ REPMGR_VERSION }}
         environment:
             NODE_ID: 1 # Integer number of node (not required if can be extracted from NODE_NAME var, e.g. node-45 => 1045)
             NODE_NAME: node1 # Node name
             CLUSTER_NODE_NETWORK_NAME: pgmaster # (default: hostname of the node)
             
-            PARTNER_NODES: "pgmaster,pgslave1,pgslave3"
+            PARTNER_NODES: "pgmaster{{#slave12}},pgslave1{{/slave12}}{{#slave34}},pgslave3{{/slave34}}"
             REPLICATION_PRIMARY_HOST: pgmaster # That should be ignored on the same node
             
             NODE_PRIORITY: 100  # (default: 100)
@@ -50,17 +54,15 @@ services:
             cluster:
                 aliases:
                     - pgmaster
-#<<< Branch 1
+{{#slave12}}
     pgslave1:
-        build:
-            context: ../src
-            dockerfile: Postgres{{#POSTGRES_EXTENDED}}{{FILE_EXTENDED_SUFFIX}}{{/POSTGRES_EXTENDED}}-{{ POSTGRES_VERSION }}-Repmgr-{{ REPMGR_VERSION }}.Dockerfile
+        image: postdock/postgres:1.11-postgres{{ POSTGRES_VERSION }}-repmgr{{ REPMGR_VERSION }}
         environment:
             NODE_ID: 2
             NODE_NAME: node2
             CLUSTER_NODE_NETWORK_NAME: pgslave1 # (default: hostname of the node)
             SSH_ENABLE: 1
-            PARTNER_NODES: "pgmaster,pgslave1,pgslave3"
+            PARTNER_NODES: "pgmaster{{#slave12}},pgslave1{{/slave12}}{{#slave34}},pgslave3{{/slave34}}"
             REPLICATION_PRIMARY_HOST: pgmaster
             CLEAN_OVER_REWIND: 1
             CONFIGS_DELIMITER_SYMBOL: ;
@@ -77,9 +79,7 @@ services:
 
     # Add more slaves if required
     pgslave2:
-        build:
-            context: ../src
-            dockerfile: Postgres{{#POSTGRES_EXTENDED}}{{FILE_EXTENDED_SUFFIX}}{{/POSTGRES_EXTENDED}}-{{ POSTGRES_VERSION }}-Repmgr-{{ REPMGR_VERSION }}.Dockerfile
+        image: postdock/postgres:1.11-postgres{{ POSTGRES_VERSION }}-repmgr{{ REPMGR_VERSION }}
         environment:
             NODE_ID: 3
             NODE_NAME: node3
@@ -97,18 +97,16 @@ services:
             cluster:
                 aliases:
                     - pgslave2
-#>>> Branch 1
-#<<< Branch 2
+{{/slave12}}
+{{#slave34}}
     pgslave3:
-        build:
-            context: ../src
-            dockerfile: Postgres{{#POSTGRES_EXTENDED}}{{FILE_EXTENDED_SUFFIX}}{{/POSTGRES_EXTENDED}}-{{ POSTGRES_VERSION }}-Repmgr-{{ REPMGR_VERSION }}.Dockerfile
+        image: postdock/postgres:1.11-postgres{{ POSTGRES_VERSION }}-repmgr{{ REPMGR_VERSION }}
         environment:
             NODE_ID: 4
             NODE_NAME: node4
             CLUSTER_NODE_NETWORK_NAME: pgslave3 # (default: hostname of the node)
 
-            PARTNER_NODES: "pgmaster,pgslave1,pgslave3"
+            PARTNER_NODES: "pgmaster{{#slave12}},pgslave1{{/slave12}}{{#slave34}},pgslave3{{/slave34}}"
             REPLICATION_PRIMARY_HOST: pgmaster
             NODE_PRIORITY: 200  # (default: 100)
             CLEAN_OVER_REWIND: 1
@@ -124,9 +122,7 @@ services:
                     - pgslave3
 
     pgslave4:
-        build:
-            context: ../src
-            dockerfile: Postgres{{#POSTGRES_EXTENDED}}{{FILE_EXTENDED_SUFFIX}}{{/POSTGRES_EXTENDED}}-{{ POSTGRES_VERSION }}-Repmgr-{{ REPMGR_VERSION }}.Dockerfile
+        image: postdock/postgres:1.11-postgres{{ POSTGRES_VERSION }}-repmgr{{ REPMGR_VERSION }}
         environment:
             NODE_ID: 5
             NODE_NAME: node5
@@ -144,11 +140,10 @@ services:
             cluster:
                 aliases:
                     - pgslave4
-#>>> Branch 2
+{{/slave34}}
+{{#backup}}
     backup:
-        build:
-            context: ../src
-            dockerfile: Barman-{{ BARMAN_VERSION }}-Postgres-{{ BARMAN_POSTGRES_CLIENT_VERSION }}.Dockerfile
+        image: postdock/barman:1.11-barman{{ BARMAN_VERSION }}-postgres{{ BARMAN_POSTGRES_CLIENT_VERSION }}
         environment:
             REPLICATION_USER: replication_user # default is replication_user
             REPLICATION_PASSWORD: replication_pass # default is replication_pass
@@ -165,10 +160,10 @@ services:
             cluster:
                 aliases:
                     - backup
+{{/backup}}
+{{#pgpool}}
     pgpool:
-        build:
-            context: ../src
-            dockerfile: Pgpool-{{ PGPOOL_VERSION }}-Postgres-{{ PGPOOL_POSTGRES_CLIENT_VERSION }}.Dockerfile
+        image: postdock/pgpool:1.11-pgpool{{ PGPOOL_VERSION }}-postgres{{ PGPOOL_POSTGRES_CLIENT_VERSION }}
         environment:
             PCP_USER: pcp_user
             PCP_PASSWORD: pcp_pass
@@ -179,7 +174,7 @@ services:
             CHECK_PGCONNECT_TIMEOUT: 3 #timout for checking if primary node is healthy
             SSH_ENABLE: 1
             DB_USERS: monkey_user:monkey_pass # in format user:password[,user:password[...]]
-            BACKENDS: "0:pgmaster:5432:1:/var/lib/postgresql/data:ALLOW_TO_FAILOVER,1:pgslave1::::,3:pgslave3::::,2:pgslave2::::" #,4:pgslaveDOES_NOT_EXIST::::
+            BACKENDS: "0:pgmaster:5432:1:/var/lib/postgresql/data:ALLOW_TO_FAILOVER,1:{{#slave12}}pgslave1::::,{{/slave12}}{{#slave34}}3:pgslave3::::{{/slave34}}{{#slave12}},2:pgslave2::::{{/slave12}}" #,4:pgslaveDOES_NOT_EXIST::::
                       # in format num:host:port:weight:data_directory:flag[,...]
                       # defaults:
                       #   port: 5432
@@ -199,96 +194,4 @@ services:
             cluster:
                 aliases:
                     - pgpool
-# the rest is for tests
-    postgres_ext:
-        build:
-            context: ../src
-            dockerfile: Postgres-extended-{{ POSTGRES_VERSION }}-Repmgr-{{ REPMGR_VERSION }}.Dockerfile
-        environment:
-          NODE_ID: 101 
-          NODE_NAME: node101 # Node name
-          CLUSTER_NODE_NETWORK_NAME: postgres_ext # (default: hostname of the node)
-          POSTGRES_PASSWORD: monkey_pass
-          POSTGRES_USER: monkey_user
-          POSTGRES_DB: monkey_db
-          CLEAN_OVER_REWIND: 0
-          CONFIGS_DELIMITER_SYMBOL: ;
-          CONFIGS: "listen_addresses:'*';shared_preload_libraries:'pglogical'"
-    postgres_conf:
-        build:
-          context: ../src/
-          dockerfile: Postgres{{#POSTGRES_EXTENDED}}{{FILE_EXTENDED_SUFFIX}}{{/POSTGRES_EXTENDED}}-{{ POSTGRES_VERSION }}-Repmgr-{{ REPMGR_VERSION }}.Dockerfile
-        environment:
-          NODE_NAME: node-102 # Node name
-          CLUSTER_NODE_NETWORK_NAME: postgres_conf # (default: hostname of the node)
-          POSTGRES_PASSWORD: monkey_pass
-          POSTGRES_USER: monkey_user
-          POSTGRES_DB: monkey_db
-          CLEAN_OVER_REWIND: 0
-          CONFIGS: "listen_addresses)'some_host'|max_replication_slots)55"
-          CONFIGS_DELIMITER_SYMBOL: "|"
-          CONFIGS_ASSIGNMENT_SYMBOL: ")"
-    pgpool_conf:
-        build:
-            context: ../src
-            dockerfile: Pgpool-{{ PGPOOL_VERSION }}-Postgres-{{ PGPOOL_POSTGRES_CLIENT_VERSION }}.Dockerfile
-        environment:
-            PCP_USER: pcp_user
-            PCP_PASSWORD: pcp_pass
-
-            CHECK_USER: monkey_user
-            CHECK_PASSWORD: monkey_pass
-
-            CHECK_PGCONNECT_TIMEOUT: 3 #timout for checking if primary node is healthy
-            DB_USERS: monkey_user:monkey_pass # in format user:password[,user:password[...]]
-            CONFIGS: "num_init_children)12|max_pool)13"
-            CONFIGS_DELIMITER_SYMBOL: "|"
-            CONFIGS_ASSIGNMENT_SYMBOL: ")"
-        ports:
-            - 5440:5432
-            - 9897:9898 # PCP
-    pgmaster2:
-        build:
-            context: ../src
-            dockerfile: Postgres{{#POSTGRES_EXTENDED}}{{FILE_EXTENDED_SUFFIX}}{{/POSTGRES_EXTENDED}}-{{ POSTGRES_VERSION }}-Repmgr-{{ REPMGR_VERSION }}.Dockerfile
-        environment:
-
-            NODE_ID: 1
-            NODE_NAME: node1
-            CLUSTER_NODE_NETWORK_NAME: pgmaster2
-
-            POSTGRES_PASSWORD: monkey_pass
-            POSTGRES_USER: monkey_user
-            POSTGRES_DB: monkey_db
-            CONFIGS_DELIMITER_SYMBOL: ;
-            CONFIGS: "listen_addresses:'*'{{#POSTGRES_EXTENDED}};shared_preload_libraries:'pglogical'{{/POSTGRES_EXTENDED}}"
-        ports:
-            - 5439:5432
-        networks:
-            cluster:
-                aliases:
-                    - pgmaster2
-    pgpool2:
-        build:
-            context: ../src
-            dockerfile: Pgpool-{{ PGPOOL_VERSION }}-Postgres-{{ PGPOOL_POSTGRES_CLIENT_VERSION }}.Dockerfile
-        depends_on:
-            - pgmaster
-            - pgmaster2
-        environment:
-            PCP_USER: pcp_user
-            PCP_PASSWORD: pcp_pass
-
-            CHECK_USER: monkey_user
-            CHECK_PASSWORD: monkey_pass
-            CHECK_PGCONNECT_TIMEOUT: 3 #timout for checking if primary node is healthy
-
-            DB_USERS: monkey_user:monkey_pass # in format user:password[,user:password[...]]
-            BACKENDS: "0:pgmaster::::,1:pgmaster2::::"
-        ports:
-            - 5431:5432
-            - 9899:9898 # PCP
-        networks:
-            cluster:
-                aliases:
-                    - pgpool2
+{{/pgpool}}
