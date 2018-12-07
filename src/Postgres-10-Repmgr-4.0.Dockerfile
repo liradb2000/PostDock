@@ -9,7 +9,7 @@ FROM postgres:10
 RUN apt-get update --fix-missing && \
     apt-get install -y postgresql-server-dev-$PG_MAJOR wget openssh-server barman-cli
 
-RUN apt-get install -y postgresql-$PG_MAJOR-repmgr=4.0.6\*
+RUN apt-get install -y postgresql-$PG_MAJOR-repmgr\*
 
 # Inherited variables
 # ENV POSTGRES_PASSWORD monkey_pass
