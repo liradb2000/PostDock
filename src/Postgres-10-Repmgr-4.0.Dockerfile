@@ -90,7 +90,7 @@ ENV SSH_ENABLE 0
 
 #### Advanced options ####
 ENV REPMGR_DEGRADED_MONITORING_TIMEOUT 5
-ENV REPMGR_PID_FILE /var/run/repmgrd.pid
+ENV REPMGR_PID_FILE /tmp/repmgrd.pid
 ENV STOPPING_LOCK_FILE /tmp/stop.pid
 ENV MASTER_SYNC_LOCK_FILE /tmp/replication
 ENV STOPPING_TIMEOUT 5
