@@ -17,8 +17,8 @@ if [[ "$MASTER_SLAVE_SWITCH" == "1" ]] || [ "$TRY_TO_FOLLOW_CLUSTER_MASTER" == "
 #    echo ">>>>>> Removing unactive replication slots of partners"
 #    close_partners_slots
     
-#    echo ">>>>>> Stop server"
-#    gosu postgres pg_ctl stop
+    echo ">>>>>> Stop server"
+    gosu postgres pg_ctl stop
 
 #    echo ">>>>>> Creating replication slot for the standby in case it's not there"
 #    REPLICATION_SLOT=`cat $PGDATA/recovery.conf | grep primary_slot_name | awk -F" = " '{print $2}'`
