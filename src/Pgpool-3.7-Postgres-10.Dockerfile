@@ -5,12 +5,12 @@
 ##########################################################################
 
 FROM debian:jessie
-ARG DOCKERIZE_VERSION=v0.2.0
+ARG DOCKERIZE_VERSION=v0.6.1
 
 RUN groupadd -r postgres --gid=999 && useradd -r -g postgres -d /home/postgres  --uid=999 postgres
 
 # grab gosu for easy step-down from root
-ARG GOSU_VERSION=1.7
+ARG GOSU_VERSION=1.11
 RUN set -x \
 	&& apt-get update && apt-get install -y --no-install-recommends ca-certificates wget && rm -rf /var/lib/apt/lists/* \
 	&& wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$(dpkg --print-architecture)" \
@@ -30,7 +30,7 @@ RUN  apt-get install -y libffi-dev libssl-dev openssh-server
 
 RUN  apt-get install -y postgresql-client-10
 
-RUN  apt-get install -y libpgpool0=3.7\* pgpool2=3.7\*
+RUN  apt-get install -y libpgpool0\* pgpool2\*
 
 RUN  wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && \
      tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
