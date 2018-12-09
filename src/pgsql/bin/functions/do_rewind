@@ -39,7 +39,7 @@ if [ "$TRY_TO_FOLLOW_CLUSTER_MASTER" == "0" ]; then
     echo ">>>>>> Repmgr can follow only main cluster master"
 else
     echo ">>>>>> Tell repmgr to follow upstream for the node"
-    gosu postgres repmgr node rejoin -f /etc/repmgr.conf -d "user=$REPLICATION_USER password=$REPLICATION_PASSWORD host=$CLUSTER_NODE_NETWORK_NAME dbname=$REPLICATION_DB port=$REPLICATION_PRIMARY_PORT connect_timeout=$CONNECT_TIMEOUT" --force-rewind --config-files=postgresql.local.conf,postgresql.conf --verbose
+    gosu postgres repmgr node rejoin -f /etc/repmgr.conf -d "user=$REPLICATION_USER password=$REPLICATION_PASSWORD host=$CURRENT_REPLICATION_PRIMARY_HOST dbname=$REPLICATION_DB  port=$REPLICATION_PRIMARY_PORT connect_timeout=10" --force-rewind --config-files=postgresql.local.conf,postgresql.conf --verbose
 #    gosu postgres repmgr -h $CURRENT_REPLICATION_PRIMARY_HOST -p $REPLICATION_PRIMARY_PORT -d $REPLICATION_DB -U $REPLICATION_USER -D $PGDATA standby follow -W --log-level DEBUG --verbose
 
     echo ">>>>>> Stop server"
