@@ -25,8 +25,13 @@ reconnect_attempts=$RECONNECT_ATTEMPTS
 reconnect_interval=$RECONNECT_INTERVAL
 $REPMGR_LOG_LEVEL_PARAM_NAME=$LOG_LEVEL
 priority=$NODE_PRIORITY
+repmgrd_pid_file=$REPMGR_PID_FILE
 " >> $REPMGR_CONFIG_FILE
 
+echo '
+REPMGRD_ENABLED=no
+REPMGRD_OPTS="--daemonize=false"
+' >> /etc/default/repmgrd
 echo ">>> Setting up upstream node..."
 if [[ "$CURRENT_REPLICATION_PRIMARY_HOST" != "" ]]; then
 
