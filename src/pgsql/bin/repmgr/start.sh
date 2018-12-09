@@ -11,4 +11,4 @@ fi
 echo ">>> Starting repmgr daemon..."
 rm -rf "$REPMGR_PID_FILE"
 
-gosu postgres repmgrd -vvv --pid-file="$REPMGR_PID_FILE" "$REPMGR_START_OPTIONS"
+gosu postgres repmgrd "$REPMGR_START_OPTIONS"
