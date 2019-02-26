@@ -4,7 +4,7 @@
 ##               BUILD_NUMBER=Wed  4 Jul 2018 10:16:37 MSK              ##
 ##########################################################################
 
-FROM postgres:11.1
+FROM postgres:11.2
 
 RUN apt-get update --fix-missing && \
     apt-get install -y postgresql-server-dev-$PG_MAJOR wget openssh-server barman-cli
